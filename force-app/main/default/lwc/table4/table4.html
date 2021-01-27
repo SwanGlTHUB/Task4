@@ -1,0 +1,29 @@
+ <template>
+    <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped">
+        <caption class = 'slds-text-heading_large slds-var-m-left_medium'>Accounts</caption>  
+        <thead>
+            <tr class="slds-text-title_caps">
+                <th style = 'padding-left: 8px;' onmouseenter = {onMouseOverHandler} onmouseleave = {onMouseOutHandler}>
+                    <div style = 'display:inline;' class="slds-truncate" title="Name">Name</div>
+                    <button onclick={onEditButtonHandler} id = 'nameB' style = 'visibility:hidden;'  type = 'editButton' class = 'slds-button slds-button_success' >Edit</button>
+                </th>
+                <th onmouseenter = {onMouseOverHandler} onmouseleave = {onMouseOutHandler}>
+                    <div style = 'display:inline;' class="slds-truncate" title="Rating">Rating</div>
+                    <button onclick={onEditButtonHandler} id = 'ratingE' style = 'visibility:hidden;' type = 'editButton' class = 'slds-button slds-button_success'>Edit</button>                </th>
+                <th>
+                    <div class="slds-truncate" title="Delete"></div>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <template for:each = {accounts} for:item = "account">  
+                <c-table-content4  footer-state = {showFooter} onaddrow = {onAddRowHandler}  ondelete = {deleteHandler} account = {account} key = {accounts.Id} style = "display:table-row"></c-table-content4>
+            </template>
+        </tbody>
+        <tfoot>
+            <template if:true={showFooter}>
+                <c-table-footer4 onsave = {saveFooterHandler} onclose = {closeFooterHandler}></c-table-footer4>
+            </template>
+        </tfoot>
+    </table>
+</template>

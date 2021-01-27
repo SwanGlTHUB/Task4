@@ -1,0 +1,11 @@
+<template>
+    <td>
+        <div id = {account.Id} oninput = {nameChangeHandler} class="slds-truncate" title="Name">{account.Name}</div>
+    </td>
+    <td>
+        <div id = {account.Id} oninput = {ratingChangeHandler} class="slds-truncate" title="Rating">{account.Rating}</div>
+   </td>
+   <td>
+        <button disabled = {footer} onclick={handleDeleteRecord} class="slds-button slds-button_destructive">Delete</button>
+    </td>
+</template>
