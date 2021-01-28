@@ -7,16 +7,18 @@ import NAME_FIELD from '@salesforce/schema/Account.Name';
 import RATING_FIELD from '@salesforce/schema/Account.Rating';
 import ID_FIELD from '@salesforce/schema/Account.Id';
 
-const editButtonsId = ['Name', 'Rating']
 const columnsLabels = ['Name', 'Rating'] 
 
 export default class Table3 extends LightningElement {
     @track accounts
     @track loadedAccounts = undefined
-    @track rows = {Name : [], Rating: []}
     @track showFooter = false
     @track getAccountsResponse
-
+    @track editButtonsDisabled = false
+    @track accountsForEditing = {}
+    @track disableNameColumn = true
+    @track disableRatingColumn = true
+    @track columnThatEditingNow = ''
 
     @wire(getAccounts)getAccountsHandler(response){
         this.getAccountsResponse = response
@@ -27,11 +29,100 @@ export default class Table3 extends LightningElement {
             this.loadedAccounts = response.data
         }
         if(this.loadedAccounts){
+            this.rows = {Name : [], Rating: []}
             this.accounts = response.data.filter((account) => {
                 return this.loadedAccounts.find((acc) => acc.Id == account.Id)
             })
         }
     }
+
+    updateRows(){
+        let allUpdates = []
+        let accountsToUpdate = this.getObjectFromProxy(this.accountsForEditing)
+        let allAccountsId = Object.keys(accountsToUpdate)
+        allAccountsId.forEach((id) => {
+            let fields = {}
+            fields[ID_FIELD.fieldApiName] = id
+            fields[NAME_FIELD.fieldApiName] = accountsToUpdate[id].name
+            fields[RATING_FIELD.fieldApiName] = accountsToUpdate[id].rating
+            console.log(fields)
+            allUpdates.push(updateRecord({fields}))
+        })
+        Promise.all(allUpdates)
+        .then(() => {
+            this.refreshContentAfterEdit()
+        })
+        .catch(() => {
+            this.dispatchSuccessToast('Accounts was not updated')
+            this.switchFooterState()
+        })
+    }
+
+    refreshContentAfterEdit(){
+        refreshApex(this.getAccountsResponse).then(() => {
+            this.switchFooterState()
+            this.dispatchSuccessToast('Accounts was updated')
+        })       
+    }
+
+    refreshContentAfterDelete(){
+        refreshApex(this.getAccountsResponse)           
+    }
+
+    switchEditButtonsStatus(){
+        this.editButtonsDisabled = !this.editButtonsDisabled
+    }
+
+    switchColumnStatus(column){
+        if(column == 'name'){
+            this.disableNameColumn = !this.disableNameColumn
+        }
+        if(column == 'rating'){
+            this.disableRatingColumn = !this.disableRatingColumn
+        }
+    }
+
+    switchFooterState(){
+        this.showFooter = !this.showFooter
+        this.switchEditButtonsStatus()
+        this.switchColumnStatus(this.columnThatEditingNow)
+    }
+
+    closeFooterHandler(){
+        this.switchFooterState()   
+    }
+
+    saveFooterHandler(){
+        this.updateRows()
+    }
+
+    deleteHandler(event){
+        let deletedAccountId = event.detail
+        this.loadedAccounts = this.loadedAccounts.filter((item) => item.Id != deletedAccountId)
+        this.refreshContentAfterDelete()
+    }
+
+    onEditButtonHandler(event){
+        let columnName = event.target.id.split('-')[0].slice(0, -1)
+        this.columnThatEditingNow = columnName
+        this.switchFooterState()
+    }
+
+    onMouseOutHandler(event){
+        let columnEditButton = event.target.querySelector('.slds-button')
+        columnEditButton.style.visibility = 'hidden'
+    }
+
+    onMouseOverHandler(event){
+        let columnEditButton = event.target.querySelector('.slds-button')
+        columnEditButton.style.visibility = 'visible'
+    }
+
+    rowEditedHandler(event){
+        let accountInformation = event.detail
+        let [accountId, accountName, accountRating] = Object.values(accountInformation)
+        this.accountsForEditing[accountId] = {name : accountName, rating : accountRating} 
+    }  
 
     dispatchSuccessToast(message){
         const event = new ShowToastEvent({
@@ -53,149 +144,11 @@ export default class Table3 extends LightningElement {
         this.dispatchEvent(event);
     }
 
-    switchFooterState(){
-        this.showFooter = !this.showFooter
-    }
-
-    refreshContentAfterEdit(){
-        refreshApex(this.getAccountsResponse).then(() => {
-            this.switchFooterState()
-            this.activateAllEditButtons()
-            this.dispatchSuccessToast('Accounts was updated')
-        })       
-    }
-
-    refreshContentAfterDelete(){
-        refreshApex(this.getAccountsResponse)
-        .then(() => console.log(5))       
-    }
-
-    updateAllRows(){
-        let allAccounts = {}
-        columnsLabels.forEach((columnName) => {
-            this.rows[columnName].forEach((row) => {
-                let realAccountId = row.id.split('-')[0]
-                if(!allAccounts.hasOwnProperty(realAccountId)){
-                    Object.defineProperty(allAccounts, realAccountId,  {
-                        value: {Name : '', Rating : ''},
-                        writable: true,
-                        enumerable: true,
-                        configurable: true})
-                 }
-                allAccounts[realAccountId][columnName] = row.innerHTML
-            })
-        })
-        
-        this.accounts.forEach((account) => {
-            let accountName = ''
-            let accountRating = ''
-            if(account.hasOwnProperty('Name')){
-                accountName = account.Name
-            }
-            if(account.hasOwnProperty('Rating')){
-                accountRating = account.Rating
-            }
-            allAccounts[account.Id]['oldName'] = accountName
-            allAccounts[account.Id]['oldRating'] = accountRating
-        })
-        
-        let allAccountsId = Object.keys(allAccounts)
-        let allPromises = []
-        allAccountsId.forEach((accountId) => {
-            let oldName = allAccounts[accountId]['oldName']
-            let oldRating = allAccounts[accountId]['oldRating']
-            let name = allAccounts[accountId]['Name']
-            let rating = allAccounts[accountId]['Rating']
-            if((oldName == name) && (oldRating == rating)){
-                return
-            }
-            let fields = {}
-            fields[ID_FIELD.fieldApiName] = accountId
-            fields[NAME_FIELD.fieldApiName] = name
-            fields[RATING_FIELD.fieldApiName] = rating
-            const recordInput = { fields }
-            allPromises.push(updateRecord(recordInput))
-            }
-        )
-        
-        Promise.all(allPromises)
-        .then(() => {
-            this.refreshContentAfterEdit()
-        })
-        .catch(() => {
-            this.switchFooterState()
-            this.activateAllEditButtons()
-            this.dispatchErrorToast('Accounts was not updated\n Try refresh page')
-        })
-    }
-
-    closeFooterHandler(){
-        this.switchFooterState()
-        this.activateAllEditButtons()
-    }
-
-    saveFooterHandler(){
-        this.updateAllRows()
-    }
-
-    deleteHandler(event){
-        console.log(1)
-        let deletedAccountId = event.detail
-        console.log(2)
-        this.loadedAccounts = this.loadedAccounts.filter((item) => item.Id != deletedAccountId)
-        console.log(3)
-        this.accounts = this.accounts.filter((item) => item.Id != deletedAccountId)
-        console.log(4)
-        this.refreshContentAfterDelete()
-    }
-
-    onMouseOverHandler(event){
-        let columnEditButton = event.target.querySelector('.slds-button')
-        columnEditButton.style.visibility = 'visible'
-    }
-
-    onMouseOutHandler(event){
-        let columnEditButton = event.target.querySelector('.slds-button')
-        columnEditButton.style.visibility = 'hidden'
-    }
-
     capitalizeFirstLetter(str){
         return str[0].toUpperCase() + str.slice(1);
     }
 
-    disableEditButtons(){
-        let editButtons = this.template.querySelectorAll(`[type=editButton]`)
-        editButtons.forEach((button) => {
-            button.disabled = true
-        })
+    getObjectFromProxy(object){
+        return JSON.parse(JSON.stringify(object))
     }
-
-    activateAllEditButtons(){
-        let editButtons = this.template.querySelectorAll(`[type=editButton]`)
-        editButtons.forEach((button) => {
-            button.disabled = false
-        })
-    }
-
-    onEditButtonHandler(event){
-        let buttonId = event.target.id.split('-')[0]
-        let columnName = buttonId.slice(0, -1)
-        columnName = this.capitalizeFirstLetter(columnName)
-        this.makeAllColumnEditable(columnName)
-        this.disableEditButtons()
-        this.showFooter = true
-    }
-
-    onAddRowHandler(event){
-        let newRow = event.detail
-        this.rows[newRow.title] = [...this.rows[newRow.title], newRow.content]
-    }
-
-    makeAllColumnEditable(columnName){
-        this.rows[columnName].forEach((elem) => {
-            elem.setAttribute('contentEditable', 'true')
-        })
-    }
-    
-
 }

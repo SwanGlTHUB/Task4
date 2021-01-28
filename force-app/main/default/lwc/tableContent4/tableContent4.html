@@ -1,11 +1,11 @@
 <template>
     <td>
-        <div id = {account.Id} oninput = {nameChangeHandler} class="slds-truncate" title="Name">{account.Name}</div>
+        <input disabled = {disableNameColumn} style = 'width:100%;' value = {nameToDisplay} oninput = {nameChangeHandler} class="slds-truncate" title="Name"></input>
     </td>
     <td>
-        <div id = {account.Id} oninput = {ratingChangeHandler} class="slds-truncate" title="Rating">{account.Rating}</div>
+        <input disabled = {disableRatingColumn} style = 'width:100%;' value = {ratingToDisplay} oninput = {ratingChangeHandler} class="slds-truncate" title="Rating"></input>
    </td>
    <td>
-        <button disabled = {footer} onclick={handleDeleteRecord} class="slds-button slds-button_destructive">Delete</button>
+        <button disabled = {footerState} onclick={handleDeleteRecord} class="slds-button slds-button_destructive">Delete</button>
     </td>
 </template>
