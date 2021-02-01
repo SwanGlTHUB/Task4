@@ -16,8 +16,6 @@ export default class Table3 extends LightningElement {
     @track getAccountsResponse
     @track editButtonsDisabled = false
     @track accountsForEditing = {}
-    @track disableNameColumn = true
-    @track disableRatingColumn = true
     @track columnThatEditingNow = ''
 
     @wire(getAccounts)getAccountsHandler(response){
@@ -45,7 +43,6 @@ export default class Table3 extends LightningElement {
             fields[ID_FIELD.fieldApiName] = id
             fields[NAME_FIELD.fieldApiName] = accountsToUpdate[id].name
             fields[RATING_FIELD.fieldApiName] = accountsToUpdate[id].rating
-            console.log(fields)
             allUpdates.push(updateRecord({fields}))
         })
         Promise.all(allUpdates)
@@ -55,6 +52,7 @@ export default class Table3 extends LightningElement {
         .catch(() => {
             this.dispatchSuccessToast('Accounts was not updated')
             this.switchFooterState()
+            this.switchEditButtonsStatus()
         })
     }
 
@@ -62,6 +60,7 @@ export default class Table3 extends LightningElement {
         refreshApex(this.getAccountsResponse).then(() => {
             this.switchFooterState()
             this.dispatchSuccessToast('Accounts was updated')
+            this.switchEditButtonsStatus()
         })       
     }
 
@@ -73,23 +72,13 @@ export default class Table3 extends LightningElement {
         this.editButtonsDisabled = !this.editButtonsDisabled
     }
 
-    switchColumnStatus(column){
-        if(column == 'name'){
-            this.disableNameColumn = !this.disableNameColumn
-        }
-        if(column == 'rating'){
-            this.disableRatingColumn = !this.disableRatingColumn
-        }
-    }
-
     switchFooterState(){
         this.showFooter = !this.showFooter
-        this.switchEditButtonsStatus()
-        this.switchColumnStatus(this.columnThatEditingNow)
     }
 
     closeFooterHandler(){
-        this.switchFooterState()   
+        this.switchFooterState()
+        this.switchEditButtonsStatus()
     }
 
     saveFooterHandler(){
@@ -102,20 +91,9 @@ export default class Table3 extends LightningElement {
         this.refreshContentAfterDelete()
     }
 
-    onEditButtonHandler(event){
-        let columnName = event.target.id.split('-')[0].slice(0, -1)
-        this.columnThatEditingNow = columnName
+    handleEditButtonPressed(){
+        this.switchEditButtonsStatus()
         this.switchFooterState()
-    }
-
-    onMouseOutHandler(event){
-        let columnEditButton = event.target.querySelector('.slds-button')
-        columnEditButton.style.visibility = 'hidden'
-    }
-
-    onMouseOverHandler(event){
-        let columnEditButton = event.target.querySelector('.slds-button')
-        columnEditButton.style.visibility = 'visible'
     }
 
     rowEditedHandler(event){

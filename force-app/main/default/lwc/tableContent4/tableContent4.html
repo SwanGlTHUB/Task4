@@ -1,11 +1,13 @@
 <template>
-    <td>
-        <input disabled = {disableNameColumn} style = 'width:100%;' value = {nameToDisplay} oninput = {nameChangeHandler} class="slds-truncate" title="Name"></input>
+    <td onmouseenter = {onMouseOverHandler} onmouseleave = {onMouseOutHandler}>
+        <input disabled = {disableNameColumn} style = 'width:90%;' value = {nameToDisplay} oninput = {nameChangeHandler} class="slds-truncate" title="Name"></input>
+        <button disabled = {editButtonsDisabled} style = 'visibility:hidden;' onclick={onEditButtonHandler} type = 'name' class = 'slds-button slds-button_success' >Edit</button>
     </td>
-    <td>
-        <input disabled = {disableRatingColumn} style = 'width:100%;' value = {ratingToDisplay} oninput = {ratingChangeHandler} class="slds-truncate" title="Rating"></input>
-   </td>
+    <td onmouseenter = {onMouseOverHandler} onmouseleave = {onMouseOutHandler}>
+        <input disabled = {disableRatingColumn} style = 'width:90%;' value = {ratingToDisplay} oninput = {ratingChangeHandler} class="slds-truncate" title="Rating"></input>
+        <button disabled = {editButtonsDisabled} style = 'visibility:hidden;' onclick={onEditButtonHandler}  type = 'rating' class = 'slds-button slds-button_success' >Edit</button>
+    </td>
    <td>
-        <button disabled = {footerState} onclick={handleDeleteRecord} class="slds-button slds-button_destructive">Delete</button>
+        <button disabled = {footerShowed} onclick={handleDeleteRecord} class="slds-button slds-button_destructive">Delete</button>
     </td>
 </template>

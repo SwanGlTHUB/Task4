@@ -4,12 +4,29 @@ import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
 export default class TableContent3 extends LightningElement {
     @api account
-    @api disableNameColumn
-    @api disableRatingColumn
-    @api footerState = false
+    @api footerShowed = false
+    @api editButtonsDisabled = false
     @track nameToDisplay = ''
     @track ratingToDisplay = ''
-    
+    @track disableNameColumn = true
+    @track disableRatingColumn = true
+
+    @api
+    get footerState(){
+       return this.footerState 
+    }
+    set footerState(value){
+        this.footerShowed = value
+        if(value == true){
+            return
+        }
+        if(this.disableNameColumn == false){
+            this.switchNameInputStatus()
+        }
+        if(this.disableRatingColumn == false){
+            this.switchRatingInputStatus()
+        }
+    }
 
     renderedCallback(){
         if(this.account){
@@ -52,6 +69,16 @@ export default class TableContent3 extends LightningElement {
         });
     }
 
+    onMouseOutHandler(event){
+        let columnEditButton = event.target.querySelector('.slds-button')
+        columnEditButton.style.visibility = 'hidden'
+    }
+
+    onMouseOverHandler(event){
+        let columnEditButton = event.target.querySelector('.slds-button')
+        columnEditButton.style.visibility = 'visible'
+    }
+
     nameChangeHandler(event){
         let currentName = event.target.value
         this.changeCellColor(event.target, 'yellow')
@@ -74,6 +101,17 @@ export default class TableContent3 extends LightningElement {
         }}))
     }
 
+    onEditButtonHandler(event){
+        let buttonType = event.target.getAttribute('type')
+        if(buttonType == 'name'){
+            this.switchNameInputStatus()
+        }
+        if(buttonType == 'rating'){
+            this.switchRatingInputStatus()
+        }
+        this.dispatchEvent(new CustomEvent('editbtnpressed'))
+    }
+
     getCurrentRowValues(){
         let name = this.template.querySelector('[title=Name]').value
         let rating = this.template.querySelector('[title=Rating').value
@@ -82,6 +120,14 @@ export default class TableContent3 extends LightningElement {
 
     changeCellColor(cell, color){
         cell.style.backgroundColor = color
+    }
+
+    switchNameInputStatus(){
+        this.disableNameColumn = !this.disableNameColumn
+    }
+
+    switchRatingInputStatus(){
+        this.disableRatingColumn = !this.disableRatingColumn
     }
 
     getAllCells(){
